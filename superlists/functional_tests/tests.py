@@ -38,9 +38,12 @@ class NewVisitorTest(LiveServerTestCase):
         # is sewing children's clothes)
         inputbox.send_keys("Buy cotton fabric")
 
-        # When she hits Enter, the page updates, and now the page lists
-        # "1: Buy cotton fabric" as an item in a to-do list
+        # When she hits Enter, she is taken to a new URL,
+        # and now the page lists "1: Buy cotton fabric" as an item in a
+        # to-do list
         inputbox.send_keys(Keys.ENTER)
+        katja_list_url = self.browser.current_url
+        self.assertRegex(katja_list_url, "/lists/.+")
         self.check_for_row_in_list_table("1: Buy cotton fabric")
 
         # There is still a text box inviting her to add another item. She
@@ -53,11 +56,32 @@ class NewVisitorTest(LiveServerTestCase):
         self.check_for_row_in_list_table("2: Use cotton fabric to make a dress")
         self.check_for_row_in_list_table("1: Buy cotton fabric")
 
-        # Katja wonders whether the site will remember her list. Then she sees
-        # that the site has generated a unique URL for her -- there is some
-        # explanatory text to that effect.
-        self.fail("Finish the test!")
+        # Now a new user, Pål, comes along to the site
+        self.browser.quit()
+        ## We use a new browser session to make sure that no information
+        ## of Katja's is coming through from cookies etc.
+        self.browser = webdriver.Firefox()
 
-        # She visits that URL - her to-do list is still there.
+        # Pål vists the home page. There's no sign of Ketja's list
+        self.browser.get(self.live_server_url)
+        page_text = self.browser.find_element_by_tag_name('body').text
+        self.assertNotIn("Buy cotton fabric", page_text)
+        self.assertNotIn("make a dress", page_text)
+
+        # Pål starts a new list by entering a new item. He is less
+        # interesting than Katja
+        inputbox = self.browser.find_element_by_id('id_new_item')
+        inputbox.send_keys('Buy milk')
+        inputbox.send_keys(Keys.ENTER)
+
+        # Pål gets his own unique URL
+        pal_list_url = self.browser.current_url
+        self.assertRegex(pal_list_url, '/lists/.+')
+        self.assertNotEqual(pal_list_url, katja_list_url)
+
+        # Again, there is no trace of Edith's list
+        page_text = self.browser.find_element_by_tag_name('body').text
+        self.assertNotIn('Buy cotton fabric', page_text)
+        self.assertIn('Buy milk', page_text)
 
         # Satisfied, she goes back to sleep
