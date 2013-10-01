@@ -36,3 +36,4 @@ nosetests.xml
 database.sqlite
 /TODO
 /static
+/db
